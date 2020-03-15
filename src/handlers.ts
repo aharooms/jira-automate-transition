@@ -12,6 +12,7 @@ const handleTransitionIssue = async ({
   const issueDetail = await jira.request(
     `${jiraEndpoint}/rest/api/3/issue/${jiraIssueId}`
   );
+  console.log(issueDetail);
   const {
     fields: {
       status: { name }
