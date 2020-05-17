@@ -14,6 +14,7 @@ interface _Params {
   resolveTicketIdsFunc?: (
     branchName: string
   ) => Promise<string[] | string | void>;
+  resolveTriggerLabelsFunc: () => Promise<Array<[string, string]>>;
 }
 
 interface AdditionalJiraConfig {

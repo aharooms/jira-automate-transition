@@ -18,7 +18,11 @@ const jiraToken = Buffer.from(`${JIRA_ACCOUNT}:${JIRA_AUTH_TOKEN}`).toString(
 
 (async () => {
   try {
-    // Your code here
+    const jira = new JiraClient(jiraToken);
+    const res = await jira.request(
+      `${JIRA_API_ENDPOINT}/rest/api/3/issue/${JIRA_ISSUE_KEY}`
+    );
+    console.log(res);
   } catch (error) {
     console.error(error);
   }

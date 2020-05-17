@@ -18,22 +18,24 @@ async function run() {
       const {
         repo: { owner, repo },
         payload,
-        eventName
+        eventName,
       } = context;
+      core.info(`Event: ${eventName}`);
+      core.info(`Action: ${payload.action}`);
       if (
         eventName === "pull_request" &&
         payload.action === "review_requested"
       ) {
         const {
           pull_request: {
-            head: { ref }
-          }
+            head: { ref },
+          },
         } = payload as Webhooks.WebhookPayloadPullRequest;
         core.info(`Branch name: ${ref}`);
         await handleTransitionIssue({
           ...parsedInput,
           colName: parsedInput.columnToMoveToWhenReviewRequested,
-          branchName: ref
+          branchName: ref,
         });
       } else if (
         eventName === "pull_request_review" &&
@@ -42,38 +44,62 @@ async function run() {
         const {
           pull_request: {
             number,
-            head: { ref }
+            head: { ref },
           },
-          review: { id }
+          review: { id },
         } = context.payload as Webhooks.WebhookPayloadPullRequestReview;
         const { githubToken } = parsedInput;
         const githubWrapper = new Github(githubToken, owner, repo);
         const isRequestChange = await githubWrapper.checkReviewIsRequestChange({
           pull_number: number,
-          review_id: id
+          review_id: id,
         });
         if (isRequestChange) {
           core.info(`Branch name: ${ref}`);
           await handleTransitionIssue({
             ...parsedInput,
             colName: parsedInput.columnToMoveToWhenChangesRequested,
-            branchName: ref
+            branchName: ref,
           });
         }
       } else if (eventName === "pull_request" && payload.action === "closed") {
         const {
           pull_request: {
             merged,
-            head: { ref }
-          }
+            head: { ref },
+          },
         } = payload as Webhooks.WebhookPayloadPullRequest;
         if (merged && parsedInput.columnToMoveToWhenMerged) {
           core.info(`Branch name: ${ref}`);
           await handleTransitionIssue({
             ...parsedInput,
             colName: parsedInput.columnToMoveToWhenMerged,
-            branchName: ref
+            branchName: ref,
           });
+        }
+      } else {
+        // you must be here because of triggering labels
+        const triggerLabels = await parsedInput.resolveTriggerLabelsFunc();
+        triggerLabels.forEach((label) => {
+          core.info(`${label[0]}: ${label[1]}`);
+        });
+        if (triggerLabels.length > 0) {
+          const {
+            pull_request: {
+              number,
+              head: { ref },
+            },
+          } = context.payload as Webhooks.WebhookPayloadPullRequestReview;
+          const { githubToken } = parsedInput;
+          const githubWrapper = new Github(githubToken, owner, repo);
+          const colName = await githubWrapper.getColNameForLabels(
+            number,
+            triggerLabels
+          );
+          if (!colName) return;
+          core.info(`Colname: ${colName}`);
+          core.info(`Ref: ${ref}`);
+          handleTransitionIssue({ ...parsedInput, branchName: ref, colName });
         }
       }
     }

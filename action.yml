@@ -21,6 +21,9 @@ inputs:
   column-to-move-to-when-merged:
     description: case-sensitive
     required: false
+  trigger-labels:
+    description: array of two-elements arrays
+    required: false
   jira-endpoint:
     required: false
   jira-account:

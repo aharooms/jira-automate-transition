@@ -6,7 +6,7 @@ const transitionIssue = async ({
   jiraTokenEncoded,
   jiraEndpoint,
   jiraIssueId,
-  colName
+  colName,
 }: HandleTransitionParams) => {
   const jira = new JiraClient(jiraTokenEncoded);
 
@@ -15,8 +15,8 @@ const transitionIssue = async ({
   );
   const {
     fields: {
-      status: { name }
-    }
+      status: { name },
+    },
   } = issueDetail;
   if (name === colName) {
     warning(`
@@ -54,15 +54,19 @@ const handleTransitionIssue = async ({
   if (resolveTicketIdsFunc && branchName) {
     const result = await resolveTicketIdsFunc(branchName);
     if (Array.isArray(result)) {
-      result.forEach(ticketId => {
+      result.forEach((ticketId) => {
+        info(`Ticket ID: ${ticketId}`);
         transitionIssue({ ...rest, jiraIssueId: ticketId });
       });
     } else if (typeof result === "string") {
+      info(`Ticket ID: ${result}`);
       transitionIssue({ ...rest, jiraIssueId: result });
     } else {
+      info(`Ticket ID: ${rest.jiraIssueId}`);
       transitionIssue({ ...rest });
     }
   } else {
+    info(`Ticket ID: ${rest.jiraIssueId}`);
     transitionIssue({ ...rest });
   }
 };

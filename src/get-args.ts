@@ -5,15 +5,21 @@ import { ParsedResult, JiraConfig, JiraConfigFile } from "./interfaces";
 
 const configPath = `${process.env.HOME}/jira/config.yml`;
 
-const AsyncFunction = Object.getPrototypeOf(async function() {}).constructor;
+const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 
 const getArgs: () => ParsedResult | void = () => {
   const resolveTicketIdsScript = core.getInput("resolve-ticket-ids-script");
+  const resolveTriggerLabels = core.getInput("trigger-labels");
 
   const resolveTicketIdsFunc =
     resolveTicketIdsScript !== ""
       ? new AsyncFunction("branchName", resolveTicketIdsScript)
       : undefined;
+
+  const resolveTriggerLabelsFunc =
+    resolveTriggerLabels !== ""
+      ? new AsyncFunction(resolveTriggerLabels)
+      : () => [];
 
   let jiraConfig: Partial<JiraConfig> = {};
   jiraConfig.jiraIssueId = core.getInput("jira-issue-id");
@@ -29,11 +35,11 @@ const getArgs: () => ParsedResult | void = () => {
         exit: true,
         success: false,
         message: "Jira issue id and ticket id resolver not found, exiting...",
-        parsedInput: undefined
+        parsedInput: undefined,
       };
     }
 
-    Array.from([jiraAccount, jiraEndpoint, jiraToken]).forEach(value => {
+    Array.from([jiraAccount, jiraEndpoint, jiraToken]).forEach((value) => {
       if (value === "" || !value) throw new Error("");
     });
   } catch (error) {
@@ -41,7 +47,7 @@ const getArgs: () => ParsedResult | void = () => {
     const {
       JIRA_API_TOKEN,
       JIRA_BASE_URL,
-      JIRA_USER_EMAIL
+      JIRA_USER_EMAIL,
     }: JiraConfigFile = parse(readFileSync(configPath, "utf8"));
     jiraConfig.jiraAccount = JIRA_USER_EMAIL;
     jiraConfig.jiraEndpoint = JIRA_BASE_URL;
@@ -81,8 +87,9 @@ const getArgs: () => ParsedResult | void = () => {
       jiraTokenEncoded: Buffer.from(`${jiraAccount}:${jiraToken}`).toString(
         "base64"
       ),
-      resolveTicketIdsFunc
-    }
+      resolveTicketIdsFunc,
+      resolveTriggerLabelsFunc,
+    },
   };
 };
 
